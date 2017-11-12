@@ -1,0 +1,124 @@
+
+## Practical Machine Learning: Course Project
+#### Steve D.
+#### 10 November 2017
+
+### Introduction & Background
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self-movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, we will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants, who were asked to perform barbell lifts correctly and incorrectly in 5 different ways. .
+
+### Project Mission
+The goal of this project is to predict the manner in which the people did the exercises, which is defined in the “classe” variable in the training dataset. The goal is also describing how the prediction model is built, how it is cross validated, evaluation of the expected out of sample error, and explaining the reasons of the choices made to build this model. The prediction model will be used to predict 20 different test cases.
+
+### Sources for Project Data
+The training data for this project can be found here: https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+The test data for this project can be found here: https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+The data for this project come from this source: http://groupware.les.inf.puc-rio.br/har. If you use the document you create for this  class for any purpose please cite them as they have been very generous in allowing their data to be used for this kind of assignment.
+
+### Loading requisite R libraries/packages
+```{r, echo=TRUE}
+library(caret)
+library(randomForest)
+library(knitr)
+library(rpart)
+```
+
+###Loading Training_data & Testing_data, & then replace invalid strings as NA 
+```{r, echo=TRUE}
+training_data <- read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv", na.strings = c("NA", "#DIV/0!", ""))
+testing_data  <- read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv",  na.strings = c("NA", "#DIV/0!", ""))
+dim(training_data)
+dim(testing_data)
+```
+
+### Processing and Compression of Data
+```{r, echo=TRUE}
+# Delete columns with NA in testing & training datasets
+training_data <- training_data[, colSums(is.na(testing_data)) == 0]
+testing_data  <- testing_data[, colSums(is.na(testing_data)) == 0]
+dim(training_data)
+dim(testing_data)
+```
+
+#### Remove variables with low variance
+```{r, echo=TRUE}
+nzv            <- nearZeroVar(training_data)
+training_data          <- training_data[, -nzv]
+testing_data           <- testing_data[, -nzv]
+dim(training_data)
+dim(testing_data)
+```
+
+#### Deleting some non-significant variables: user_name, raw_timestamp_part_1, raw_timestamp_part_,2 cvtd_timestamp, new_window, num_window -- mainly first 6 columns
+```{r, echo=TRUE}
+training_data  <- training_data[, -c(1:6)]
+testing_data   <- testing_data[, -c(1:6)]
+dim(training_data)
+dim(testing_data)
+```
+Compresion of Data reduced to 53 Variables/Predictors
+
+### Cross Validation & Data Splitting
+Setting seed to preserve reproducibility
+```{r, echo=TRUE}
+set.seed(6217)
+```
+Divide data into a training_data (60%) and testing_data (40%)
+```{r, echo=TRUE}
+intrain  <- createDataPartition(y = training_data$classe, p = 0.60, list = FALSE)
+training_data2  <- training_data[intrain,]
+testing_data2   <- training_data[-intrain,]
+dim(training_data2)
+dim(testing_data2)
+```
+
+#### Convert dependent ("classe") variable to a factor variable
+```{r, echo=TRUE}
+training_data2$classe <- as.factor(training_data2$classe)
+```
+
+### Random Forest Model
+We train a model using random forest algorythm with a 5 folds cross validation.      
+```{r, echo=TRUE}
+train_control <- trainControl(method="cv", number=5, savePredictions = TRUE, classProbs = TRUE)
+grid <- expand.grid(mtry = c(2, 3, 4))
+
+RFmodel <- train(classe ~ ., data = training_data2, method = "rf", trControl = train_control, tuneGrid=grid)
+
+predRF  <- predict(RFmodel, testing_data2, type = "raw")
+confus_rand_forest    <- confusionMatrix(predRF, testing_data2$classe)
+confus_rand_forest
+```
+#### Key Observations:
+From the confusion matrix, one can see that, in implementing a Random Forest model/algorythm, the number of misclassified predictions is relatively low.  Additionally, the predictive accuracy of the model is 99.15%, which is very good.  On the flip side, the out of sample error is 100% minus 99.15% which equals 0.85%.
+
+
+### Decision-Classification Tree Model
+```{r, echo=TRUE}
+control <- trainControl(method = "cv", number = 5)
+Dtree_model  <- train(classe ~ ., data = training_data2, method = "rpart", trControl = control)
+pred_Dtree   <- predict(Dtree_model, testing_data2, type = "raw")
+confus_Dtree <- confusionMatrix(pred_Dtree, testing_data2$classe)
+confus_Dtree
+```
+#### Key Observations:
+From the confusion matrix, one can see that, in the implementation of a Decision-Classification model/algorythm, the number of misclassified predictions is quite high. Additionally, the predictive accuracy of the model is just 49.26%, which is significantly lower than the Random Forest model.  On the flip side, the out of sample error is 100% minus 49.26% which equals 50.74%, which quite high and indicative of a poorly performing model.
+
+### Compare models <- choosing model with the best accuracy (random forest)
+```{r, echo=TRUE}
+compare <- data.frame(confus_rand_forest$overall, confus_Dtree$overall)
+compare
+```
+Again whith an accuracy rate of approximatly 99.%, the random forest algorithym outperforms the decision tree algorithym (69% accuracy). The out of sample error is 100% minus the accuracy rate.  
+
+### Application of best model ("ie., random forest") to predict outcomes of 20 observations in the testing_data set. 
+```{r, echo=TRUE}
+final_pred <- predict(RFmodel, testing_data)
+final_pred
+```
+
+### Source:
+More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+
+### Credits:
+Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. Qualitative Activity Recognition of Weight Lifting Exercises. Proceedings of 4th International Conference in Cooperation with SIGCHI (Augmented Human '13) . Stuttgart, Germany: ACM SIGCHI, 2013.
