@@ -102,14 +102,14 @@ confus_Dtree <- confusionMatrix(pred_Dtree, testing_data2$classe)
 confus_Dtree
 ```
 #### Key Observations:
-From the confusion matrix, one can see that, in the implementation of a Decision-Classification model/algorythm, the number of misclassified predictions is quite high. Additionally, the predictive accuracy of the model is just 49.26%, which is significantly lower than the Random Forest model.  On the flip side, the out of sample error is 100% minus 49.26% which equals 50.74%, which quite high and indicative of a poorly performing model.
+From the confusion matrix, one can see that, in the implementation of a Decision-Classification model/algorythm, the number of misclassified predictions is quite high. Additionally, the predictive accuracy of the model is just 49.26%, which is significantly lower than the Random Forest model.  On the flip side, the out of sample error is 100% minus 49.26% which equals 50.74%, which is quite high and indicative of a poorly performing model.
 
 ### Compare models <- choosing model with the best accuracy (random forest)
 ```{r, echo=TRUE}
 compare <- data.frame(confus_rand_forest$overall, confus_Dtree$overall)
 compare
 ```
-Again whith an accuracy rate of approximatly 99.%, the random forest algorithym outperforms the decision tree algorithym (69% accuracy). The out of sample error is 100% minus the accuracy rate.  
+Again whith an accuracy rate of approximatly 99.%, the random forest model outperforms the decision tree model (69% accuracy). Also, the out of sample error is 100% minus the accuracy rate.  
 
 ### Application of best model ("ie., random forest") to predict outcomes of 20 observations in the testing_data set. 
 ```{r, echo=TRUE}
@@ -122,3 +122,4 @@ More information is available from the website here: http://groupware.les.inf.pu
 
 ### Credits:
 Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. Qualitative Activity Recognition of Weight Lifting Exercises. Proceedings of 4th International Conference in Cooperation with SIGCHI (Augmented Human '13) . Stuttgart, Germany: ACM SIGCHI, 2013.
+
